@@ -11,18 +11,18 @@ load_dotenv()
 
 api_key = os.getenv('API_KEY')
 
-
-movies_dict = pickle.load(open("movies.pkl", 'rb'))
-movies = pd.DataFrame(movies_dict)
+@st.cache_data
+def load_data():
+    return pd.DataFrame(pickle.load(open("movies.pkl", 'rb')))
 
 @st.cache_data
-def compute_similarity(movies):
+def compute_vectors(movies):
     cv = CountVectorizer(max_features=5000, stop_words='english')
-    vector_matrix = cv.fit_transform(movies['tags']).toarray()
-    return cosine_similarity(vector_matrix)
+    return cv.fit_transform(movies['tags'])
 
 
-similarity = compute_similarity(movies)
+movies = load_data()
+vectors = compute_vectors(movies)
 
 st.title('Movie Recommender System')
 
@@ -42,8 +42,8 @@ def fetch_poster(movie_id):
 
 def recommend(movie):
   movie_index = movies[movies['title'] == movie].index[0]
-  distances = similarity[movie_index]
-  movies_list = sorted(list(enumerate(distances)), reverse=True, key=lambda x:x[1])[1:6]
+  similarity = cosine_similarity(vectors[movie_index], vectors).flatten()
+  movies_list = sorted(list(enumerate(similarity)), reverse=True, key=lambda x:x[1])[1:6]
   
   recommend_movies = []
   recommend_movies_posters = []
