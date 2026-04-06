@@ -21,8 +21,8 @@ def compute_similarity(movies):
     vector_matrix = cv.fit_transform(movies['tags']).toarray()
     return cosine_similarity(vector_matrix)
 
-with st.spinner("🔄 Computing movie similarity... Please wait"):
-    similarity = compute_similarity(movies)
+
+similarity = compute_similarity(movies)
 
 st.title('Movie Recommender System')
 
