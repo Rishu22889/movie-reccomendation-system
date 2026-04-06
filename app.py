@@ -4,6 +4,8 @@ import pandas as pd
 import requests
 import os
 from dotenv import load_dotenv
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 load_dotenv()
 
@@ -13,8 +15,14 @@ api_key = os.getenv('API_KEY')
 movies_dict = pickle.load(open("movies.pkl", 'rb'))
 movies = pd.DataFrame(movies_dict)
 
-similarity = pickle.load(open("similarity.pkl", 'rb'))
+@st.cache_data
+def compute_similarity(movies):
+    cv = CountVectorizer(max_features=5000, stop_words='english')
+    vector_matrix = cv.fit_transform(movies['tags']).toarray()
+    return cosine_similarity(vector_matrix)
 
+with st.spinner("🔄 Computing movie similarity... Please wait"):
+    similarity = compute_similarity(movies)
 
 st.title('Movie Recommender System')
 
@@ -26,7 +34,7 @@ selected_movie = st.selectbox(
 def fetch_poster(movie_id):
     response = requests.get(f"https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=en-US")
     data = response.json()
-    if 'poster_path' in data:
+    if data.get('poster_path'):
         return "https://image.tmdb.org/t/p/w500" + data['poster_path']
     else:
         return "https://via.placeholder.com/500x750?text=No+Image"
